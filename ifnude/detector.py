@@ -18,30 +18,45 @@ def download(url, path):
     with tqdm(total=total, desc='Downloading', unit='B', unit_scale=True, unit_divisor=1024) as progress:
         urllib.request.urlretrieve(url, path, reporthook=lambda count, block_size, total_size: progress.update(block_size))
 
-model_url = "https://huggingface.co/s0md3v/nudity-checker/resolve/main/detector.onnx"
-classes_url = "https://huggingface.co/s0md3v/nudity-checker/resolve/main/classes"
+def download_model(model_folder):
+    
+    model_url = "https://huggingface.co/s0md3v/nudity-checker/resolve/main/detector.onnx"
+    model_name = os.path.basename(model_url)
+    model_path = os.path.join(model_folder, model_name)
+    
+    if not os.path.exists(model_path):
+        print("Downloading the detection model to", model_path)
+        download(model_url, model_path)
 
+    return model_path
+        
+def download_classes(model_folder):
 
-home = Path.home()
-model_folder = os.path.join(home, f".ifnude/")
-if not os.path.exists(model_folder):
-    os.makedirs(model_folder)
+    classes_url = "https://huggingface.co/s0md3v/nudity-checker/resolve/main/classes"
+    classes_path = os.path.join(model_folder, "classes")
 
-model_name = os.path.basename(model_url)
-model_path = os.path.join(model_folder, model_name)
-classes_path = os.path.join(model_folder, "classes")
+    if not os.path.exists(classes_path):
+        print("Downloading the classes list to", classes_path)
+        download(classes_url, classes_path)
 
-if not os.path.exists(model_path):
-    print("Downloading the detection model to", model_path)
-    download(model_url, model_path)
+    return classes_path
 
-if not os.path.exists(classes_path):
-    print("Downloading the classes list to", classes_path)
-    download(classes_url, classes_path)
+def detect(img, model_path=None, classes_path=None, mode="default", min_prob=None):
 
-classes = [c.strip() for c in open(classes_path).readlines() if c.strip()]
+    if not model_path or not classes_path:
+        home = Path.home()
+        model_folder = os.path.join(home, f".ifnude/")
+        if not os.path.exists(model_folder):
+            os.makedirs(model_folder, exist_ok=True)
+            
+    if not model_path:
+        model_path = download_model(model_folder)
+        
+    if not classes_path:        
+        classes_path = download_classes(model_folder)
+        
+    classes = [c.strip() for c in open(classes_path).readlines() if c.strip()]
 
-def detect(img, mode="default", min_prob=None):
     # we are loading the model on every detect() because it crashes otherwise for some reason xD
     detection_model = onnxruntime.InferenceSession(model_path, providers=["CPUExecutionProvider"])
 
