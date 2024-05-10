@@ -52,10 +52,18 @@ def detect(img, model_path=None, classes_path=None, mode="default", min_prob=Non
     if not model_path:
         model_path = download_model(model_folder)
         
-    if not classes_path:        
-        classes_path = download_classes(model_folder)
-        
-    classes = [c.strip() for c in open(classes_path).readlines() if c.strip()]
+    #if not classes_path:        
+    #    classes_path = download_classes(model_folder)
+    #classes = [c.strip() for c in open(classes_path).readlines() if c.strip()]
+
+    classes = [
+        "EXPOSED_BELLY",
+        "EXPOSED_BUTTOCKS"
+        "EXPOSED_BREAST_F",
+        "EXPOSED_GENITALIA_F",
+        "EXPOSED_GENITALIA_M",
+        "EXPOSED_BREAST_M"
+    ]
 
     # we are loading the model on every detect() because it crashes otherwise for some reason xD
     detection_model = onnxruntime.InferenceSession(model_path, providers=["CPUExecutionProvider"])
